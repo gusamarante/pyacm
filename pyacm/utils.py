@@ -8,10 +8,21 @@ def vec(mat):
 
     Parameters
     ----------
-    mat: numpy.array
+        mat: numpy.array
     """
     vec_mat = mat.reshape((-1, 1), order='F')
     return vec_mat
+
+
+def vec_quad_form(mat):
+    """
+    `vec` operation for quadratic forms
+
+    Parameters
+    ----------
+        mat: numpy.array
+    """
+    return vec(np.outer(mat, mat))
 
 
 def commutation_matrix(shape):
