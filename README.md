@@ -1,7 +1,7 @@
 [paper_website]: https://www.newyorkfed.org/medialibrary/media/research/staff_reports/sr340.pdf
 [inference_atribute]: https://github.com/gusamarante/pyacm/blob/ba641c14e450fc83d22db4ef5e60eadbd489b351/pyacm/acm.py#L203
 
-**<span style="color:red">STILL UNDER DEVELOPMENT</span>**
+**STILL UNDER DEVELOPMENT**
 
 # pyacm
 Implementation of ["Pricing the Term Structure with Linear Regressions" from 
