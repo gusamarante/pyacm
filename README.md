@@ -28,10 +28,16 @@ pip install pyacm
 ```
 
 # Example
-SOON...
+The tricky part is getting the correct data format. The model works with 
+annualized log-yields for zero-coupon bonds, observed at daily or monthly 
+frequency. Maturities must be equally spaced in monthly frequency and start 
+at month 1. This means that you need to construct a bootstraped curve for every
+date and interpolate it at fixed monthly maturities.
+
+MORE SOON...
 
 
 # Observations
-I am not completely sure that computations in the [inferences attributes]
-[inference_atribute] are correct. If you find any mistakes, please open a pull 
-request following the contributing guidelines.
+I am not completely sure that computations in the [inferences attributes][inference_atribute] 
+are correct. If you find any mistakes, please open a pull request following the contributing 
+guidelines.
