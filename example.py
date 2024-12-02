@@ -127,4 +127,21 @@ plt.tight_layout()
 plt.show()
 
 
-# TODO mkt implied vs RN implied VS realized (develop)
+# Term Premium VS Expected Returns
+fig = plt.figure(figsize=(5 * (16 / 9), 5))
+
+fwd_curves = acm.fwd_curve("2024-07-05")
+fwd_curves = fwd_curves.reset_index(drop=True)
+fwd_curves.index = fwd_curves.index + 1
+
+ax = plt.subplot2grid((1, 1), (0, 0))
+ax.plot(fwd_curves, label=fwd_curves.columns)
+ax.set_title(f"Forward Curves")
+ax.set_xlabel("Maturity in Months")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.tick_params(rotation=90, axis="x")
+ax.legend(frameon=True, loc="best")
+
+plt.tight_layout()
+plt.show()
