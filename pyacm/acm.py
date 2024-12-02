@@ -72,6 +72,44 @@ class NominalACM:
         self.er_loadings, self.er_hist_m, self.er_hist_d = self._expected_return()
         self.z_lambda, self.z_beta = self._inference()
 
+    def fwd_curve(self, date=None):
+        """
+        Compute the forward curves for a given date.
+
+        Parameters
+        ----------
+        date : date-like
+            date in any format that can be interpreted by pandas.to_datetime()
+        """
+
+        if date is None:
+            date = self.curve.index[-1]
+
+        date = pd.to_datetime(date)
+        fwd_mkt = self._compute_fwd_curve(self.curve.loc[date])
+        fwd_miy = self._compute_fwd_curve(self.miy.loc[date])
+        fwd_rny = self._compute_fwd_curve(self.rny.loc[date])
+        df = pd.concat(
+            [
+                fwd_mkt.rename("Observed"),
+                fwd_miy.rename("Model Implied"),
+                fwd_rny.rename("Risk-Neutral"),
+            ],
+            axis=1,
+        )
+        return df
+
+
+    @staticmethod
+    def _compute_fwd_curve(curve):
+        aux_curve = curve.reset_index(drop=True)
+        aux_curve.index = aux_curve.index + 1
+        factor = (1 + aux_curve) ** (aux_curve.index / 12)
+        fwd_factor = factor / factor.shift(1).fillna(1)
+        fwds = (fwd_factor ** 12) - 1
+        fwds = pd.Series(fwds.values, index=curve.index)
+        return fwds
+
     def _get_excess_returns(self):
         ttm = np.arange(1, self.n + 1) / 12
         log_prices = - self.curve_monthly * ttm
