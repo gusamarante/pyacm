@@ -1,11 +1,10 @@
 # TODO Turn this into a jupyter notebook
 
 from pyacm import NominalACM
-
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import pandas as pd
-import numpy as np
+
 
 # Read and plot data
 yield_curve = pd.read_csv(
