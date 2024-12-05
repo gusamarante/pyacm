@@ -26,6 +26,7 @@ setup(
         'scikit-learn',
         'numpy',
         'matplotlib',
+        'tqdm',
     ],
     keywords=[
         'asset pricing',

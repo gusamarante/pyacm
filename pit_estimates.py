@@ -1,5 +1,8 @@
 """
-Generate point-in-time estimates
+Generate point-in-time estimates.
+
+For each date, rerun the model and save the latest estimate of expected return
+and term premium
 """
 from tqdm import tqdm
 import pandas as pd
