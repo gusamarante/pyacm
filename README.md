@@ -27,14 +27,26 @@ carries all the relevant variables as atributes:
 pip install pyacm
 ```
 
-# Example
-The tricky part is getting the correct data format. The model works with 
-annualized log-yields for zero-coupon bonds, observed at daily or monthly 
-frequency. Maturities must be equally spaced in monthly frequency and start 
-at month 1. This means that you need to construct a bootstraped curve for every
-date and interpolate it at fixed monthly maturities.
 
-MORE SOON...
+# Original Article
+> Adrian, Tobias and Crump, Richard K. and Moench, Emanuel, 
+> Pricing the Term Structure with Linear Regressions (April 11, 2013). 
+> FRB of New York Staff Report No. 340, 
+> Available at SSRN: https://ssrn.com/abstract=1362586 or http://dx.doi.org/10.2139/ssrn.1362586
+
+The version of the article that was published by the NY FED is not 100% explicit on how the data is being manipulated, 
+but I found an earlier version of the paper on SSRN where the authors go deeper into the details on how everything is being estimated:
+- Data for zero yields uses monthly maturities starting from month 1
+- All principal components and model parameters are estiamted with data resampled to a monthly frequency, averaging observations in each month
+- To get daily / real-time estimates, the factor loadings estimated from the monthly frquency are used to transform the daily data
+
+
+# Usage
+The tricky part of using this model is getting the correct data format:
+- The model works with annualized log-yields for zero-coupon bonds
+- Observations (index) must be in either monthly or daily frequency
+- Maturities (columns) must be equally spaced in **monthly** frequency and start at month 1. This means that you need to construct a bootstraped curve for every date and interpolate it at fixed monthly maturities.
+- Whichever maturity you want to be the longest, your input data should have one column more. For example, if you want term premium estimate up to the 10-year yield (120 months), your input data should include maturities up to 121 months. This is needed to properly compute the returns.
 
 
 # Observations

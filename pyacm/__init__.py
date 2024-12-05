@@ -1,3 +1,5 @@
 from pyacm.acm import NominalACM
 
-__all__ = ["NominalACM"]
+__all__ = [
+    "NominalACM",
+]

@@ -26,6 +26,88 @@ class NominalACM:
           month.
         - To get daily / real-time estimates, the factor loadings estimated
           from the monthly frquency are used to transform the daily data.
+
+    Attributes
+    ----------
+    n_factors: int
+        number of principal components used
+
+    curve: pandas.DataFrame
+        Raw data of the yield curve
+
+    curve_monthly: pandas.DataFrame
+        Yield curve data resampled to a monthly frequency by averageing
+        the observations
+
+    t: int
+        Number of observations in the timeseries dimension
+
+    n: int
+        Number of observations in the cross-sectional dimension. Same
+        as number of maturities available after returns are computed
+
+    rx_m: pd.DataFrame
+        Excess returns in monthly frquency
+
+    rf_m: pandas.Series
+        Risk-free rate in monthly frequency
+
+    rf_d: pandas.Series
+        Risk-free rate in daily frequency
+
+    pc_factors_m: pandas.DataFrame
+        Principal components in monthly frequency
+
+    pc_loadings_m: pandas.DataFrame
+        Factor loadings of the monthly PCs
+
+    pc_explained_m: pandas.Series
+        Percent of total variance explained by each monthly principal component
+
+    pc_factors_d: pandas.DataFrame
+        Principal components in daily frequency
+
+    pc_loadings_d: pandas.DataFrame
+        Factor loadings of the daily PCs
+
+    pc_explained_d: pandas.Series
+        Percent of total variance explained by each monthly principal component
+
+    mu, phi, Sigma, v: numpy.array
+        Estimates of the VAR(1) parameters, the first stage of estimation.
+        The names are the same as the original paper
+
+    a, beta, c, sigma2: numpy.array
+        Estimates of the risk premium equation, the second stage of estimation.
+        The names are the same as the original paper
+
+    lambda0, lambda1: numpy.array
+        Estimates of the price of risk parameters, the third stage of estimation.
+        The names are the same as the original paper
+
+    miy: pandas.DataFrame
+        Model implied / fitted yields
+
+    rny: pandas.DataFrame
+        Risk neutral yields
+
+    tp: pandas.DataFrame
+        Term premium estimates
+
+    er_loadings: pandas.DataFrame
+        Loadings of the expected reutrns on the principal components
+
+    er_hist_m: pandas.DataFrame
+        Historical estimates of expected returns, computed in-sample, in monthly frequency
+
+    er_hist_d: pandas.DataFrame
+        Historical estimates of expected returns, computed in-sample, in daily frequency
+
+    z_lambda: pandas.DataFrame
+        Z-stat for inference on the price of risk parameters
+
+    z_beta: pandas.DataFrame
+        Z-stat for inference on the loadings of expected returns
     """
 
     def __init__(self, curve, n_factors=5):
@@ -48,7 +130,7 @@ class NominalACM:
 
         self.n_factors = n_factors
         self.curve = curve
-        self.curve_monthly = curve.resample('M').mean()
+        self.curve_monthly = curve.resample('ME').mean()
         self.t = self.curve_monthly.shape[0] - 1
         self.n = self.curve_monthly.shape[1]
         self.rx_m, self.rf_m = self._get_excess_returns()
