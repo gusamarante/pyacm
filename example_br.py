@@ -8,7 +8,7 @@ import pandas as pd
 
 # Read and plot data
 yield_curve = pd.read_csv(
-    "sample_data/di monthly maturities.csv",
+    "sample_data/di monthly maturities.csv",  # TODO change to read from web
     index_col=0,
 )
 yield_curve = yield_curve.iloc[:, :121]  # maturities up to 10y
