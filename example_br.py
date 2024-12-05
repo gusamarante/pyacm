@@ -1,5 +1,3 @@
-# TODO Turn this into a jupyter notebook
-
 from pyacm import NominalACM
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates

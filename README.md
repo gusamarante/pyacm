@@ -41,8 +41,6 @@ but I found an earlier version of the paper on SSRN where the authors go deeper 
 - To get daily / real-time estimates, the factor loadings estimated from the monthly frquency are used to transform the daily data
 
 
-
-
 # Usage
 The tricky part of using this model is getting the correct data format:
 - The model works with annualized log-yields for zero-coupon bonds
