@@ -8,13 +8,13 @@ import pandas as pd
 
 # Read and plot data
 yield_curve = pd.read_csv(
-    "sample_data/di monthly maturities.csv",  # TODO change to read from web
+    "https://raw.githubusercontent.com/gusamarante/pyacm/refs/heads/main/sample_data/di%20monthly%20maturities.csv",
     index_col=0,
 )
 yield_curve = yield_curve.iloc[:, :121]  # maturities up to 10y
 yield_curve = yield_curve.dropna()
 yield_curve.index = pd.to_datetime(yield_curve.index)
-yield_curve = yield_curve[yield_curve.index >= "2007-03-01"]  # TODO deal with this missing data
+yield_curve = yield_curve[yield_curve.index >= "2007-03-01"]
 
 
 # Plot the Series of selcted maturities

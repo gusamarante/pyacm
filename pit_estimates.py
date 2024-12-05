@@ -19,7 +19,7 @@ yield_curve = pd.read_csv(
 yield_curve = yield_curve.iloc[:, :121]  # maturities up to 10y
 yield_curve = yield_curve.dropna()
 yield_curve.index = pd.to_datetime(yield_curve.index)
-yield_curve = yield_curve[yield_curve.index >= "2007-03-01"]  # TODO deal with this missing data
+yield_curve = yield_curve[yield_curve.index >= "2007-03-01"]
 
 tp = pd.DataFrame(columns=yield_curve.columns)
 er = pd.DataFrame(columns=yield_curve.columns)

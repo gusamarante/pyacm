@@ -92,9 +92,9 @@ class FRED(object):
 
         url = r'https://fred.stlouisfed.org/data/' + series_id + '.txt'
         df = pd.read_csv(url, sep='\t')
-        series_start = df[df[df.columns[0]].str.contains('DATE\s+VALUE')].index[0] + 1
+        series_start = df[df[df.columns[0]].str.contains(r'DATE\s+VALUE')].index[0] + 1
         df = df.loc[series_start:]
-        df = df[df.columns[0]].str.split('\s+', expand=True)
+        df = df[df.columns[0]].str.split(r'\s+', expand=True)
         df = df[~(df[1] == '.')]
         df = pd.DataFrame(data=df[1].values.astype(float),
                           index=pd.to_datetime(df[0]),
