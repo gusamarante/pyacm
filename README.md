@@ -16,6 +16,7 @@ carries all the relevant variables as atributes:
 - Yields fitted by the model
 - Risk-neutral yields
 - Term premium
+- Historical in-sample expected returns 
 - Expected return loadings
 - Hypothesis testing (Not sure if correct, more info observations below)
 
@@ -25,6 +26,16 @@ carries all the relevant variables as atributes:
 pip install pyacm
 ```
 
+# Examples
+The estimates for the US are available on the [NY FED website](https://www.newyorkfed.org/research/data_indicators/term-premia-tabs#/overview).
+
+The jupyter notebook [`example_br`](https://github.com/gusamarante/pyacm/blob/main/example_br.ipynb) 
+contains an example application to the Brazilian DI futures curve that showcases all the available methods.
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/gusamarante/pyacm/refs/heads/main/images/DI%20term%20premium.png" alt="DI Term Premium"/>
+  <img src="https://raw.githubusercontent.com/gusamarante/pyacm/refs/heads/main/images/DI%20observed%20vs%20risk%20neutral.png" alt="Observed VS Risk Neutral"/>
+</p>
 
 # Original Article
 > Adrian, Tobias and Crump, Richard K. and Moench, Emanuel, 
