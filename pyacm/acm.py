@@ -130,7 +130,7 @@ class NominalACM:
 
         self.n_factors = n_factors
         self.curve = curve
-        self.curve_monthly = curve.resample('ME').mean()
+        self.curve_monthly = curve.resample('M').mean()
         self.t = self.curve_monthly.shape[0] - 1
         self.n = self.curve_monthly.shape[1]
         self.rx_m, self.rf_m = self._get_excess_returns()

@@ -9,7 +9,7 @@ import pandas as pd
 from pyacm import NominalACM
 
 
-min_obs = 252
+min_obs = 252 * 5
 
 # Read the data
 yield_curve = pd.read_csv(
