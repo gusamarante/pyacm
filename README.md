@@ -26,7 +26,29 @@ carries all the relevant variables as atributes:
 pip install pyacm
 ```
 
+# Usage
+```python
+from pyacm import NominalACM
+
+acm = NominalACM(
+    curve=yield_curve,
+    n_factors=5,
+)
+```
+The tricky part of using this model is getting the correct data format. The 
+`yield_curve` dataframe in the expression above requires:
+- Annualized log-yields for zero-coupon bonds
+- Observations (index) must be in either monthly or daily frequency
+- Maturities (columns) must be equally spaced in **monthly** frequency and start 
+at month 1. This means that you need to construct a bootstraped curve for every 
+date and interpolate it at fixed monthly maturities
+- Whichever maturity you want to be the longest, your input data should have one
+column more. For example, if you want term premium estimate up to the 10-year 
+yield (120 months), your input data should include maturities up to 121 months. 
+This is needed to properly compute the returns.
+
 # Examples
+
 The estimates for the US are available on the [NY FED website](https://www.newyorkfed.org/research/data_indicators/term-premia-tabs#/overview).
 
 The jupyter notebook [`example_br`](https://github.com/gusamarante/pyacm/blob/main/example_br.ipynb) 
@@ -48,14 +70,6 @@ but I found an earlier version of the paper on SSRN where the authors go deeper 
 - Data for zero yields uses monthly maturities starting from month 1
 - All principal components and model parameters are estiamted with data resampled to a monthly frequency, averaging observations in each month
 - To get daily / real-time estimates, the factor loadings estimated from the monthly frquency are used to transform the daily data
-
-
-# Usage
-The tricky part of using this model is getting the correct data format:
-- The model works with annualized log-yields for zero-coupon bonds
-- Observations (index) must be in either monthly or daily frequency
-- Maturities (columns) must be equally spaced in **monthly** frequency and start at month 1. This means that you need to construct a bootstraped curve for every date and interpolate it at fixed monthly maturities.
-- Whichever maturity you want to be the longest, your input data should have one column more. For example, if you want term premium estimate up to the 10-year yield (120 months), your input data should include maturities up to 121 months. This is needed to properly compute the returns.
 
 
 # Observations
