@@ -130,13 +130,12 @@ class NominalACM:
 
         self.n_factors = n_factors
         self.curve = curve
-        self.curve_monthly = curve.resample('M').mean()
+        self.curve_monthly = curve.resample('M').last()
         self.t = self.curve_monthly.shape[0] - 1
         self.n = self.curve_monthly.shape[1]
         self.rx_m, self.rf_m = self._get_excess_returns()
         self.rf_d = self.curve.iloc[:, 0] * (1 / 12)
-        self.pc_factors_m, self.pc_loadings_m, self.pc_explained_m = self._get_pcs(self.curve_monthly)
-        self.pc_factors_d, self.pc_loadings_d, self.pc_explained_d = self._get_pcs(self.curve)
+        self.pc_factors_m, self.pc_factors_d, self.pc_loadings_m, self.pc_explained_m = self._get_pcs(self.curve_monthly, self.curve)
         self.mu, self.phi, self.Sigma, self.v = self._estimate_var()
         self.a, self.beta, self.c, self.sigma2 = self._excess_return_regression()
         self.lambda0, self.lambda1 = self._retrieve_lambda()
@@ -200,25 +199,34 @@ class NominalACM:
         rx = rx.dropna(how='all', axis=0).dropna(how='all', axis=1)
         return rx, rf.dropna()
 
-    def _get_pcs(self, curve):
+    def _get_pcs(self, curve_m, curve_d):
+
+        curve_m = curve_m - curve_m.mean()
+        curve_d = curve_d - curve_d.mean()
+
         pca = PCA(n_components=self.n_factors)
-        pca.fit(curve)
+        pca.fit(curve_m)
         col_names = [f'PC {i + 1}' for i in range(self.n_factors)]
         df_loadings = pd.DataFrame(data=pca.components_.T,
                                    columns=col_names,
-                                   index=curve.columns)
+                                   index=curve_m.columns)
 
-        # Normalize the direction of the eigenvectors
-        signal = np.sign(df_loadings.iloc[-1])
-        df_loadings = df_loadings * signal
-        df_pc = (curve - curve.mean()) @ df_loadings
+        # Enforce average positive loading
+        df_loadings = np.sign(df_loadings.mean()) * df_loadings
+
+        # Compute factors in both frequencies
+        df_pc_m = curve_m @ df_loadings
+        df_pc_m = df_pc_m / df_pc_m.std()
+
+        df_pc_d = curve_d @ df_loadings  # TODO parei aqui!!
+
 
         # Percent Explained
         df_explained = pd.Series(data=pca.explained_variance_ratio_,
                                  name='Explained Variance',
                                  index=col_names)
 
-        return df_pc, df_loadings, df_explained
+        return df_pc_m, df_pc_d, df_loadings, df_explained
 
     def _estimate_var(self):
         X = self.pc_factors_m.copy().T
