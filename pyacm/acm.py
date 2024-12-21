@@ -6,7 +6,8 @@ from sklearn.decomposition import PCA
 
 from pyacm.utils import vec, vec_quad_form, commutation_matrix
 
-
+# TODO Curve in daily frequency could be None
+# TODO Make sure it works for DI Futures
 class NominalACM:
     """
     This class implements the model from the article:
@@ -110,7 +111,7 @@ class NominalACM:
         Z-stat for inference on the loadings of expected returns
     """
 
-    def __init__(self, curve, n_factors=5):
+    def __init__(self, curve, n_factors=5, selected_maturities=None):
         """
         Runs the baseline varsion of the ACM term premium model. Works for data
         with monthly frequency or higher.
@@ -130,15 +131,23 @@ class NominalACM:
 
         self.n_factors = n_factors
         self.curve = curve
+        self.selected_maturities = selected_maturities
         self.curve_monthly = curve.resample('M').last()
         self.t = self.curve_monthly.shape[0] - 1
         self.n = self.curve_monthly.shape[1]
         self.rx_m, self.rf_m = self._get_excess_returns()
         self.rf_d = self.curve.iloc[:, 0] * (1 / 12)
         self.pc_factors_m, self.pc_factors_d, self.pc_loadings_m, self.pc_explained_m = self._get_pcs(self.curve_monthly, self.curve)
-        self.mu, self.phi, self.Sigma, self.v = self._estimate_var()
-        self.a, self.beta, self.c, self.sigma2 = self._excess_return_regression()
-        self.lambda0, self.lambda1 = self._retrieve_lambda()
+
+        # ===== ACM Three-Step Regression =====
+        # 1st Step - Factor VAR
+        self.mu, self.phi, self.Sigma, self.v, self.s0 = self._estimate_var()
+
+        # 2nd Step - Excess Returns
+        self.beta, self.omega, self.beta_star = self._excess_return_regression()
+
+        # 3rd Step - Convexity-adjusted price of risk
+        self.lambda0, self.lambda1, self.mu_star, self.phi_star = self._retrieve_lambda()
 
         if self.curve.index.freqstr == 'M':
             X = self.pc_factors_m
@@ -180,7 +189,6 @@ class NominalACM:
         )
         return df
 
-
     @staticmethod
     def _compute_fwd_curve(curve):
         aux_curve = curve.reset_index(drop=True)
@@ -193,38 +201,48 @@ class NominalACM:
 
     def _get_excess_returns(self):
         ttm = np.arange(1, self.n + 1) / 12
-        log_prices = - self.curve_monthly * ttm
+        log_prices = - (self.curve_monthly / 100) * ttm
         rf = - log_prices.iloc[:, 0].shift(1)
         rx = (log_prices - log_prices.shift(1, axis=0).shift(-1, axis=1)).subtract(rf, axis=0)
+        rx = rx.shift(1, axis=1)
         rx = rx.dropna(how='all', axis=0).dropna(how='all', axis=1)
         return rx, rf.dropna()
 
     def _get_pcs(self, curve_m, curve_d):
 
-        curve_m = curve_m - curve_m.mean()
-        curve_d = curve_d - curve_d.mean()
+        curve_m_cut = curve_m.iloc[:, 2:]  # The authors do this, do not know why
+        curve_d_cut = curve_d.iloc[:, 2:]  # The authors do this, do not know why
+
+        curve_m_cut = curve_m_cut - curve_m_cut.mean()
+        curve_d_cut = curve_d_cut - curve_d_cut.mean()
 
         pca = PCA(n_components=self.n_factors)
-        pca.fit(curve_m)
+        pca.fit(curve_m_cut)
         col_names = [f'PC {i + 1}' for i in range(self.n_factors)]
-        df_loadings = pd.DataFrame(data=pca.components_.T,
-                                   columns=col_names,
-                                   index=curve_m.columns)
+        df_loadings = pd.DataFrame(
+            data=pca.components_.T,
+            columns=col_names,
+            index=curve_m_cut.columns,
+        )
 
-        # Enforce average positive loading
+        df_pc_m = curve_m_cut @ df_loadings
+        sigma_factor = df_pc_m.std()
+        df_pc_m = df_pc_m / df_pc_m.std()
+        df_loadings = df_loadings / sigma_factor
+
+        # Enforce average positive loadings
+        df_pc_m = np.sign(df_loadings.mean()) * df_pc_m
         df_loadings = np.sign(df_loadings.mean()) * df_loadings
 
-        # Compute factors in both frequencies
-        df_pc_m = curve_m @ df_loadings
-        df_pc_m = df_pc_m / df_pc_m.std()
-
-        df_pc_d = curve_d @ df_loadings  # TODO parei aqui!!
-
+        # Daily frequency
+        df_pc_d = curve_d_cut @ df_loadings
 
         # Percent Explained
-        df_explained = pd.Series(data=pca.explained_variance_ratio_,
-                                 name='Explained Variance',
-                                 index=col_names)
+        df_explained = pd.Series(
+            data=pca.explained_variance_ratio_,
+            name='Explained Variance',
+            index=col_names,
+        )
 
         return df_pc_m, df_pc_d, df_loadings, df_explained
 
@@ -234,34 +252,72 @@ class NominalACM:
         X_rhs = np.vstack((np.ones((1, self.t)), X.values[:, 0:-1]))  # X_t and a constant.
 
         var_coeffs = (X_lhs @ np.linalg.pinv(X_rhs))
-        mu = var_coeffs[:, [0]]
+
         phi = var_coeffs[:, 1:]
 
-        v = X_lhs - var_coeffs @ X_rhs
-        Sigma = v @ v.T / self.t
+        # Leave the estimated constant
+        # mu = var_coeffs[:, [0]]
 
-        return mu, phi, Sigma, v
+        # Force constant to zero
+        mu = np.zeros((self.n_factors, 1))
+        var_coeffs[:, [0]] = 0
+
+        # Residuals
+        v = X_lhs - var_coeffs @ X_rhs
+        Sigma = v @ v.T / (self.t - 1)
+
+        s0 = np.cov(v).reshape((-1, 1))
+
+        return mu, phi, Sigma, v, s0
 
     def _excess_return_regression(self):
+
+        if self.selected_maturities is not None:
+            rx = self.rx_m[self.selected_maturities].values
+        else:
+            rx = self.rx_m.values
+
         X = self.pc_factors_m.copy().T.values[:, :-1]
-        Z = np.vstack((np.ones((1, self.t)), self.v, X))  # Innovations and lagged X
-        abc = self.rx_m.values.T @ np.linalg.pinv(Z)
-        E = self.rx_m.values.T - abc @ Z
-        sigma2 = np.trace(E @ E.T) / (self.n * self.t)
+        Z = np.vstack((np.ones((1, self.t)), X, self.v)).T  # Innovations and lagged X
+        abc = inv(Z.T @ Z) @ (Z.T @ rx)
+        E = rx - Z @ abc
+        omega = np.var(E.reshape(-1, 1)) * np.eye(len(self.selected_maturities))
 
-        a = abc[:, [0]]
-        beta = abc[:, 1:self.n_factors + 1].T
-        c = abc[:, self.n_factors + 1:]
+        abc = abc.T
+        beta = abc[:, -self.n_factors:]
 
-        return a, beta, c, sigma2
+        beta_star = np.zeros((len(self.selected_maturities), self.n_factors**2))
+
+        for i in range(len(self.selected_maturities)):
+            beta_star[i, :] = np.kron(beta[i, :], beta[i, :]).T
+
+        return beta, omega, beta_star
 
     def _retrieve_lambda(self):
-        BStar = np.squeeze(np.apply_along_axis(vec_quad_form, 1, self.beta.T))
-        lambda1 = np.linalg.pinv(self.beta.T) @ self.c
-        lambda0 = np.linalg.pinv(self.beta.T) @ (self.a + 0.5 * (BStar @ vec(self.Sigma) + self.sigma2))
-        return lambda0, lambda1
+        rx = self.rx_m[self.selected_maturities]
+        factors = np.hstack([np.ones((self.t, 1)), self.pc_factors_m.iloc[:-1].values])
+
+        # Orthogonalize factors with respect to v
+        v_proj = self.v.T @ np.linalg.pinv(self.v @ self.v.T) @ self.v
+        factors = factors - v_proj @ factors
+
+        adjustment = self.beta_star @ self.s0 + np.diag(self.omega).reshape(-1, 1)
+        rx_adjusted = rx.values + (1 / 2) * np.tile(adjustment, (1, self.t)).T
+        Y = (inv(factors.T @ factors) @ factors.T @ rx_adjusted).T
+
+        # Compute Lambda
+        X = self.beta
+        Lambda = inv(X.T @ X) @ X.T @ Y
+        lambda0 = Lambda[:, 0]
+        lambda1 = Lambda[:, 1:]
+
+        muStar = self.mu.reshape(-1) - lambda0
+        phiStar = self.phi - lambda1
+
+        return lambda0, lambda1, muStar, phiStar
 
     def _affine_recursions(self, lambda0, lambda1, X_in, r1):
+        # TODO PAREI AQUI
         X = X_in.T.values[:, 1:]
         r1 = vec(r1.values)[-X.shape[1]:, :]
 
@@ -303,7 +359,7 @@ class NominalACM:
         er_loadings = pd.DataFrame(
             data=er_loadings,
             columns=self.pc_factors_m.columns,
-            index=self.curve.columns[:-1],
+            index=self.selected_maturities,
         )
 
         # Monthly
@@ -383,7 +439,7 @@ class NominalACM:
         sd_lambda = np.sqrt(np.diag(v_lambda).reshape(Lamb.shape, order='F'))
         sd_beta = np.sqrt(np.diag(v_beta).reshape(self.beta.shape, order='F'))
 
-        z_beta = pd.DataFrame(self.beta / sd_beta, index=self.pc_factors_m.columns, columns=self.curve.columns[:-1]).T
+        z_beta = pd.DataFrame(self.beta / sd_beta, index=self.pc_factors_m.columns, columns=self.selected_maturities).T
         z_lambda = pd.DataFrame(Lamb / sd_lambda, index=self.pc_factors_m.columns, columns=[f"lambda {i}" for i in range(Lamb.shape[1])])
 
         return z_lambda, z_beta
