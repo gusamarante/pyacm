@@ -2,6 +2,7 @@ from pyacm import NominalACM
 import pandas as pd
 import matplotlib.pyplot as plt
 
+# TODO this input is not matching the matlab version
 ylds_d = pd.read_excel("sample_data/us_data.xlsx", index_col=0, sheet_name="daily")
 ylds_d.index = pd.to_datetime(ylds_d.index)
 ylds_d = ylds_d.iloc[:-10]
