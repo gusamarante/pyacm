@@ -111,7 +111,13 @@ class NominalACM:
         Z-stat for inference on the loadings of expected returns
     """
 
-    def __init__(self, curve, n_factors=5, selected_maturities=None):
+    def __init__(
+            self,
+            curve,
+            curve_m=None,  # TODO Documentation
+            n_factors=5,
+            selected_maturities=None,
+    ):
         """
         Runs the baseline varsion of the ACM term premium model. Works for data
         with monthly frequency or higher.
@@ -129,15 +135,25 @@ class NominalACM:
             number of principal components to used as state variables.
         """
 
+        # TODO assert columns of daily and monthly are the same
+        # TODO assert monthly index frequency
+
         self.n_factors = n_factors
         self.curve = curve
         self.selected_maturities = selected_maturities
-        self.curve_monthly = curve.resample('M').last()
-        self.t = self.curve_monthly.shape[0] - 1
-        self.n = self.curve_monthly.shape[1]
-        self.rx_m, self.rf_m = self._get_excess_returns()
-        self.rf_d = self.curve.iloc[:, 0] * (1 / 12)
+
+        if curve_m is None:
+            self.curve_monthly = curve.resample('M').last()
+        else:
+            self.curve_monthly = curve_m
+
+        self.t_d = self.curve.shape[0]
+        self.t_m = self.curve_monthly.shape[0]
+        self.n = self.curve.shape[1]
         self.pc_factors_m, self.pc_factors_d, self.pc_loadings_m, self.pc_explained_m = self._get_pcs(self.curve_monthly, self.curve)
+
+        self.rx_m = self._get_excess_returns()
+        # TODO EVERYTHING RIGHT UP TO HERE
 
         # ===== ACM Three-Step Regression =====
         # 1st Step - Factor VAR
@@ -201,20 +217,23 @@ class NominalACM:
 
     def _get_excess_returns(self):
         ttm = np.arange(1, self.n + 1) / 12
-        log_prices = - (self.curve_monthly / 100) * ttm
+        log_prices = - (self.curve_monthly / 100) * ttm  # TODO this division by 100 has to go, test with decimal rates and check if output is the same
         rf = - log_prices.iloc[:, 0].shift(1)
         rx = (log_prices - log_prices.shift(1, axis=0).shift(-1, axis=1)).subtract(rf, axis=0)
-        rx = rx.shift(1, axis=1)
+        # rx = rx.shift(1, axis=1)  # TODO is this needed?
+
         rx = rx.dropna(how='all', axis=0).dropna(how='all', axis=1)
-        return rx, rf.dropna()
+        # rf = rf.dropna()  # TODO Do I need to keep track of this?
+        return rx
 
     def _get_pcs(self, curve_m, curve_d):
 
-        curve_m_cut = curve_m.iloc[:, 2:]  # The authors do this, do not know why
-        curve_d_cut = curve_d.iloc[:, 2:]  # The authors do this, do not know why
+        curve_m_cut = curve_m.iloc[:, 2:]  # TODO The authors do this, do not know why
+        curve_d_cut = curve_d.iloc[:, 2:]  # TODO The authors do this, do not know why
 
-        curve_m_cut = curve_m_cut - curve_m_cut.mean()
-        curve_d_cut = curve_d_cut - curve_d_cut.mean()
+        mean_yields = curve_m_cut.mean()
+        curve_m_cut = curve_m_cut - mean_yields
+        curve_d_cut = curve_d_cut - mean_yields
 
         pca = PCA(n_components=self.n_factors)
         pca.fit(curve_m_cut)
@@ -225,14 +244,17 @@ class NominalACM:
             index=curve_m_cut.columns,
         )
 
+        # TODO Try a different normalization, keeping the PCs with their respective variances and loadings with unit norm.
+
         df_pc_m = curve_m_cut @ df_loadings
         sigma_factor = df_pc_m.std()
         df_pc_m = df_pc_m / df_pc_m.std()
         df_loadings = df_loadings / sigma_factor
 
         # Enforce average positive loadings
-        df_pc_m = np.sign(df_loadings.mean()) * df_pc_m
-        df_loadings = np.sign(df_loadings.mean()) * df_loadings
+        sign_changes = np.sign(df_loadings.mean())
+        df_loadings = sign_changes * df_loadings
+        df_pc_m = sign_changes * df_pc_m
 
         # Daily frequency
         df_pc_d = curve_d_cut @ df_loadings
