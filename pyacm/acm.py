@@ -116,7 +116,7 @@ class NominalACM:
             curve,
             curve_m=None,  # TODO Documentation
             n_factors=5,
-            selected_maturities=None,
+            selected_maturities=None,  # TODO may select if you trust representativeness / liquidity
     ):
         """
         Runs the baseline varsion of the ACM term premium model. Works for data
@@ -157,10 +157,10 @@ class NominalACM:
         # ===== ACM Three-Step Regression =====
         # 1st Step - Factor VAR
         self.mu, self.phi, self.Sigma, self.v, self.s0 = self._estimate_var()
-        # TODO EVERYTHING RIGHT UP TO HERE
 
         # 2nd Step - Excess Returns
         self.beta, self.omega, self.beta_star = self._excess_return_regression()
+        # TODO EVERYTHING RIGHT UP TO HERE
 
         # 3rd Step - Convexity-adjusted price of risk
         self.lambda0, self.lambda1, self.mu_star, self.phi_star = self._retrieve_lambda()
@@ -221,9 +221,10 @@ class NominalACM:
         rf = - log_prices.iloc[:, 0].shift(1)
         rx = (log_prices - log_prices.shift(1, axis=0).shift(-1, axis=1)).subtract(rf, axis=0)
         # rx = rx.shift(1, axis=1)  # TODO is this needed?
+        rx = rx.shift(1, axis=1)
 
-        rx = rx.dropna(how='all', axis=0).dropna(how='all', axis=1)
-        # rf = rf.dropna()  # TODO Do I need to keep track of this?
+        rx = rx.dropna(how='all', axis=0)
+        rx[1] = 0
         return rx
 
     def _get_pcs(self, curve_m, curve_d):
@@ -300,7 +301,7 @@ class NominalACM:
             rx = self.rx_m.values
 
         X = self.pc_factors_m.copy().T.values[:, :-1]
-        Z = np.vstack((np.ones((1, self.t)), X, self.v)).T  # Innovations and lagged X
+        Z = np.vstack((np.ones((1, self.t_m)), X, self.v)).T  # Lagged X and Innovations
         abc = inv(Z.T @ Z) @ (Z.T @ rx)
         E = rx - Z @ abc
         omega = np.var(E.reshape(-1, 1)) * np.eye(len(self.selected_maturities))
