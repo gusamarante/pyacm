@@ -148,16 +148,16 @@ class NominalACM:
             self.curve_monthly = curve_m
 
         self.t_d = self.curve.shape[0]
-        self.t_m = self.curve_monthly.shape[0]
+        self.t_m = self.curve_monthly.shape[0] - 1
         self.n = self.curve.shape[1]
         self.pc_factors_m, self.pc_factors_d, self.pc_loadings_m, self.pc_explained_m = self._get_pcs(self.curve_monthly, self.curve)
 
         self.rx_m = self._get_excess_returns()
-        # TODO EVERYTHING RIGHT UP TO HERE
 
         # ===== ACM Three-Step Regression =====
         # 1st Step - Factor VAR
         self.mu, self.phi, self.Sigma, self.v, self.s0 = self._estimate_var()
+        # TODO EVERYTHING RIGHT UP TO HERE
 
         # 2nd Step - Excess Returns
         self.beta, self.omega, self.beta_star = self._excess_return_regression()
@@ -271,7 +271,7 @@ class NominalACM:
     def _estimate_var(self):
         X = self.pc_factors_m.copy().T
         X_lhs = X.values[:, 1:]  # X_t+1. Left hand side of VAR
-        X_rhs = np.vstack((np.ones((1, self.t)), X.values[:, 0:-1]))  # X_t and a constant.
+        X_rhs = np.vstack((np.ones((1, self.t_m)), X.values[:, 0:-1]))  # X_t and a constant.
 
         var_coeffs = (X_lhs @ np.linalg.pinv(X_rhs))
 
@@ -286,7 +286,7 @@ class NominalACM:
 
         # Residuals
         v = X_lhs - var_coeffs @ X_rhs
-        Sigma = v @ v.T / (self.t - 1)
+        Sigma = v @ v.T / (self.t_m - 1)
 
         s0 = np.cov(v).reshape((-1, 1))
 
