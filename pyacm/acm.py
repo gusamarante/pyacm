@@ -160,10 +160,10 @@ class NominalACM:
 
         # 2nd Step - Excess Returns
         self.beta, self.omega, self.beta_star = self._excess_return_regression()
-        # TODO EVERYTHING RIGHT UP TO HERE
 
         # 3rd Step - Convexity-adjusted price of risk
         self.lambda0, self.lambda1, self.mu_star, self.phi_star = self._retrieve_lambda()
+        # TODO EVERYTHING RIGHT UP TO HERE
 
         if self.curve.index.freqstr == 'M':
             X = self.pc_factors_m
@@ -318,14 +318,14 @@ class NominalACM:
 
     def _retrieve_lambda(self):
         rx = self.rx_m[self.selected_maturities]
-        factors = np.hstack([np.ones((self.t, 1)), self.pc_factors_m.iloc[:-1].values])
+        factors = np.hstack([np.ones((self.t_m, 1)), self.pc_factors_m.iloc[:-1].values])
 
         # Orthogonalize factors with respect to v
         v_proj = self.v.T @ np.linalg.pinv(self.v @ self.v.T) @ self.v
         factors = factors - v_proj @ factors
 
         adjustment = self.beta_star @ self.s0 + np.diag(self.omega).reshape(-1, 1)
-        rx_adjusted = rx.values + (1 / 2) * np.tile(adjustment, (1, self.t)).T
+        rx_adjusted = rx.values + (1 / 2) * np.tile(adjustment, (1, self.t_m)).T
         Y = (inv(factors.T @ factors) @ factors.T @ rx_adjusted).T
 
         # Compute Lambda
