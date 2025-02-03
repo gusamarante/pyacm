@@ -165,6 +165,7 @@ class NominalACM:
         self.lambda0, self.lambda1, self.mu_star, self.phi_star = self._retrieve_lambda()
         # TODO EVERYTHING RIGHT UP TO HERE
 
+        # TODO PAREI AQUI - Olhar em que situações pode-se usar os yield mensais.
         if self.curve.index.freqstr == 'M':
             X = self.pc_factors_m
             r1 = self.rf_m
@@ -340,7 +341,6 @@ class NominalACM:
         return lambda0, lambda1, muStar, phiStar
 
     def _affine_recursions(self, lambda0, lambda1, X_in, r1):
-        # TODO PAREI AQUI
         X = X_in.T.values[:, 1:]
         r1 = vec(r1.values)[-X.shape[1]:, :]
 
