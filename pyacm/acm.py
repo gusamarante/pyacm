@@ -168,10 +168,10 @@ class NominalACM:
         # TODO PAREI AQUI - Olhar em que situações pode-se usar os yield mensais.
         if self.curve.index.freqstr == 'M':
             X = self.pc_factors_m
-            r1 = self.rf_m
+            r1 = self.curve_monthly.iloc[:, 0]
         else:
             X = self.pc_factors_d
-            r1 = self.rf_d
+            r1 = self.curve.iloc[:, 0]
 
         self.miy = self._affine_recursions(self.lambda0, self.lambda1, X, r1)
         self.rny = self._affine_recursions(0, 0, X, r1)
