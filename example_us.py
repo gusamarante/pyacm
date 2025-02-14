@@ -16,5 +16,28 @@ acm = NominalACM(
     selected_maturities=[6, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
 )
 
-acm.tp[119].plot()
+# CHART
+size = 7
+fig = plt.figure(figsize=(size * (16 / 7.3), size))
+
+ax = plt.subplot2grid((1, 2), (0, 0))
+ax.plot(ylds_d[120], label="Actual Yield", lw=1)
+ax.plot(acm.miy[120], label="Fitted Yield", lw=1, ls='--')
+ax.set_title("10-Year Model Fit")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.tick_params(rotation=90, axis="x")
+ax.legend(loc="upper right")
+
+ax = plt.subplot2grid((1, 2), (0, 1))
+ax.plot(ylds_d[120], label="Yield", lw=1)
+ax.plot(acm.rny[120], label="Risk Neutral Yield", lw=1)
+ax.plot(acm.tp[120], label="Term Premium", lw=1)
+ax.set_title("10-Year Yield Decomposition")
+ax.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax.tick_params(rotation=90, axis="x")
+ax.legend(loc="upper right")
+
+plt.tight_layout()
 plt.show()
