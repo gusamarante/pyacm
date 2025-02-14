@@ -13,7 +13,7 @@ acm = NominalACM(
     curve=ylds_d,
     curve_m=ylds_m,
     n_factors=5,
-    selected_maturities=[6, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120]
+    selected_maturities=[6, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120],
 )
 
 # CHART
