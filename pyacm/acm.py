@@ -145,7 +145,11 @@ class NominalACM:
 
         self.n_factors = n_factors
         self.curve = curve
-        self.selected_maturities = selected_maturities
+
+        if selected_maturities is None:
+            self.selected_maturities = curve.columns
+        else:
+            self.selected_maturities = selected_maturities
 
         if curve_m is None:
             self.curve_monthly = curve.resample('M').mean()
