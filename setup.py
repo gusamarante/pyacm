@@ -27,7 +27,6 @@ setup(
         'pandas',
         'scikit-learn',
         'statsmodels',
-        'tqdm',
     ],
     keywords=[
         'asset pricing',
