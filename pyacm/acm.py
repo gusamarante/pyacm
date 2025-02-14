@@ -5,11 +5,7 @@ from numpy.linalg import inv
 from sklearn.decomposition import PCA
 from statsmodels.tools.tools import add_constant
 
-from pyacm.utils import vec, vec_quad_form, commutation_matrix
 
-# TODO Curve in daily frequency could be None
-# TODO Make sure it works for DI Futures
-# TODO make sure data is accepted as decimals
 class NominalACM:
     """
     This class implements the model from the article:
@@ -42,21 +38,18 @@ class NominalACM:
         Yield curve data resampled to a monthly frequency by averageing
         the observations
 
-    t: int
-        Number of observations in the timeseries dimension
+    t_m: int
+        Number of observations in the monthly timeseries dimension
+
+    t_d: int
+        Number of observations in the daily timeseries dimension
 
     n: int
-        Number of observations in the cross-sectional dimension. Same
-        as number of maturities available after returns are computed
+        Number of observations in the cross-sectional dimension, the number of
+        maturities available
 
     rx_m: pd.DataFrame
         Excess returns in monthly frquency
-
-    rf_m: pandas.Series
-        Risk-free rate in monthly frequency
-
-    rf_d: pandas.Series
-        Risk-free rate in daily frequency
 
     pc_factors_m: pandas.DataFrame
         Principal components in monthly frequency
@@ -70,23 +63,26 @@ class NominalACM:
     pc_factors_d: pandas.DataFrame
         Principal components in daily frequency
 
-    pc_loadings_d: pandas.DataFrame
-        Factor loadings of the daily PCs
-
-    pc_explained_d: pandas.Series
-        Percent of total variance explained by each monthly principal component
-
     mu, phi, Sigma, v: numpy.array
         Estimates of the VAR(1) parameters, the first stage of estimation.
         The names are the same as the original paper
 
-    a, beta, c, sigma2: numpy.array
+    beta: numpy.array
         Estimates of the risk premium equation, the second stage of estimation.
-        The names are the same as the original paper
+        The name is the same as the original paper
 
     lambda0, lambda1: numpy.array
-        Estimates of the price of risk parameters, the third stage of estimation.
-        The names are the same as the original paper
+        Estimates of the price of risk parameters, the third stage of
+        estimation.
+
+    delta0, delta1: numpy.array
+        Estimates of the short rate equation coefficients.
+
+    A, B: numpy.array
+        Affine coefficients for the fitted yields of different maturities
+
+    Arn, Brn: numpy.array
+        Affine coefficients for the risk neutral yields of different maturities
 
     miy: pandas.DataFrame
         Model implied / fitted yields
@@ -100,25 +96,16 @@ class NominalACM:
     er_loadings: pandas.DataFrame
         Loadings of the expected reutrns on the principal components
 
-    er_hist_m: pandas.DataFrame
-        Historical estimates of expected returns, computed in-sample, in monthly frequency
-
-    er_hist_d: pandas.DataFrame
-        Historical estimates of expected returns, computed in-sample, in daily frequency
-
-    z_lambda: pandas.DataFrame
-        Z-stat for inference on the price of risk parameters
-
-    z_beta: pandas.DataFrame
-        Z-stat for inference on the loadings of expected returns
+    er_hist: pandas.DataFrame
+        Historical estimates of expected returns, computed in-sample.
     """
 
     def __init__(
             self,
             curve,
-            curve_m=None,  # TODO Documentation
+            curve_m=None,
             n_factors=5,
-            selected_maturities=None,  # TODO may select if you trust representativeness / liquidity
+            selected_maturities=None,
     ):
         """
         Runs the baseline varsion of the ACM term premium model. Works for data
@@ -128,25 +115,40 @@ class NominalACM:
         ----------
         curve : pandas.DataFrame
             Annualized log-yields. Maturities (columns) must start at month 1
-            and be equally spaced in monthly frequency. The labels of the
-            columns do not matter, they be kept the same. Observations (index)
-            must be of monthly frequency or higher. The index must be a
-            pandas.DateTimeIndex.
+            and be equally spaced in monthly frequency. Column labels must be
+            integers from 1 to n. Observations (index) must be a pandas
+            DatetimeIndex with daily frequency.
+
+        curve_m: pandas.DataFrame
+            Annualized log-yields in monthly frequency to be used for the
+            parameters estimates. This is here in case the user wants to use a
+            different curve for the parameter estimation. If None is passed,
+            the input `curve` is resampled to monthly frequency. If something
+            is passed, maturities (columns) must start at month 1 and be
+            equally spaced in monthly frequency. Column labels must be
+            integers from 1 to n. Observations (index) must be a pandas
+            DatetimeIndex with monthly frequency.
 
         n_factors : int
             number of principal components to used as state variables.
+
+        selected_maturities: list of int
+            the maturities to be considered in the parameter estimation steps.
+            If None is passed, all the maturities are considered. The user may
+            choose smaller set of yields to consider due to, for example,
+            liquidity and representativeness of certain maturities.
         """
 
-        # TODO assert columns of daily and monthly are the same
-        # TODO assert monthly index frequency
-        # TODO assert columns are consecutive integers
+        self._assertions(curve, curve_m, selected_maturities)
+
+
 
         self.n_factors = n_factors
         self.curve = curve
         self.selected_maturities = selected_maturities
 
         if curve_m is None:
-            self.curve_monthly = curve.resample('M').last()
+            self.curve_monthly = curve.resample('M').mean()
         else:
             self.curve_monthly = curve_m
 
@@ -217,7 +219,7 @@ class NominalACM:
         df = pd.concat(
             [
                 fwd_mkt.rename("Observed"),
-                fwd_miy.rename("Model Implied"),
+                fwd_miy.rename("Fitted"),
                 fwd_rny.rename("Risk-Neutral"),
             ],
             axis=1,
@@ -234,12 +236,36 @@ class NominalACM:
         fwds = pd.Series(fwds.values, index=curve.index)
         return fwds
 
+    @staticmethod
+    def _assertions(curve, curve_m, selected_maturities):
+        # Selected maturities are available
+        if selected_maturities is not None:
+            assert all([col in curve.columns for col in selected_maturities]), \
+                "not all `selected_columns` are available in `curve`"
+
+        # Consecutive monthly maturities
+        cond1 = curve.columns[0] != 1
+        cond2 = not all(np.diff(curve.columns.values) == 1)
+        if cond1 or cond2:
+            msg = "`curve` columns must be consecutive integers starting from 1"
+            raise AssertionError(msg)
+
+        # Only if `curve_m` is passed
+        if curve_m is not None:
+
+            # Same columns
+            assert curve_m.columns.equals(curve.columns), \
+                "columns of `curve` and `curve_m` must be the same"
+
+            # Monthly frequency
+            assert pd.infer_freq(curve_m.index) == 'M', \
+                "`curve_m` must have a DatetimeIndex with monthly frequency"
+
     def _get_excess_returns(self):
         ttm = np.arange(1, self.n + 1) / 12
-        log_prices = - (self.curve_monthly / 100) * ttm  # TODO this division by 100 has to go, test with decimal rates and check if output is the same
+        log_prices = - self.curve_monthly * ttm
         rf = - log_prices.iloc[:, 0].shift(1)
         rx = (log_prices - log_prices.shift(1, axis=0).shift(-1, axis=1)).subtract(rf, axis=0)
-        # rx = rx.shift(1, axis=1)  # TODO is this needed?
         rx = rx.shift(1, axis=1)
 
         rx = rx.dropna(how='all', axis=0)
@@ -248,8 +274,10 @@ class NominalACM:
 
     def _get_pcs(self, curve_m, curve_d):
 
-        curve_m_cut = curve_m.iloc[:, 2:]  # TODO The authors do this, do not know why
-        curve_d_cut = curve_d.iloc[:, 2:]  # TODO The authors do this, do not know why
+        # The authors' code shows that they ignore the first 2 maturities for
+        # the PC estimation.
+        curve_m_cut = curve_m.iloc[:, 2:]
+        curve_d_cut = curve_d.iloc[:, 2:]
 
         mean_yields = curve_m_cut.mean()
         curve_m_cut = curve_m_cut - mean_yields
@@ -263,8 +291,6 @@ class NominalACM:
             columns=col_names,
             index=curve_m_cut.columns,
         )
-
-        # TODO Try a different normalization, keeping the PCs with their respective variances and loadings with unit norm.
 
         df_pc_m = curve_m_cut @ df_loadings
         sigma_factor = df_pc_m.std()
@@ -360,7 +386,7 @@ class NominalACM:
 
     @staticmethod
     def _short_rate_equation(r1, X):
-        r1 = r1 / 1200  # TODO remove the 100
+        r1 = r1 / 12
         X = add_constant(X)
         Delta = inv(X.T @ X) @ X.T @ r1
         delta0 = Delta.iloc[0]
@@ -387,7 +413,7 @@ class NominalACM:
 
     def _compute_yields(self, A, B):
         A = A.reshape(-1, 1)
-        multiplier = np.tile(self.curve.columns / 12, (self.t_d, 1)).T / 100  # TODO remove the 100
+        multiplier = np.tile(self.curve.columns / 12, (self.t_d, 1)).T
         yields = (- ((np.tile(A, (1, self.t_d)) + B @ self.pc_factors_d.T) / multiplier).T).values
         yields = pd.DataFrame(
             data=yields,

@@ -5,9 +5,12 @@ import matplotlib.pyplot as plt
 
 ylds_d = pd.read_excel("sample_data/us_data.xlsx", index_col=0, sheet_name="daily")
 ylds_d.index = pd.to_datetime(ylds_d.index)
+ylds_d = ylds_d / 100
 
 ylds_m = pd.read_excel("sample_data/us_data.xlsx", index_col=0, sheet_name="monthly")
 ylds_m.index = pd.to_datetime(ylds_m.index)
+ylds_m = ylds_m.resample("M").last()
+ylds_m = ylds_m / 100
 
 acm = NominalACM(
     curve=ylds_d,
