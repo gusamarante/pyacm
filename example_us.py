@@ -1,3 +1,10 @@
+"""
+This file replicates the term premium estimates from the original paper. The
+file `us_data.xlsx` contains data from the authors' original matlab replication
+files. The output of this script matches the one from the original.
+
+For the updated US term premium estimates, visit the NY FED website.
+"""
 from pyacm import NominalACM
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -19,7 +26,10 @@ acm = NominalACM(
     selected_maturities=[6, 12, 24, 36, 48, 60, 72, 84, 96, 108, 120],
 )
 
-# CHART
+
+# =================
+# ===== Chart =====
+# =================
 size = 7
 fig = plt.figure(figsize=(size * (16 / 7.3), size))
 
