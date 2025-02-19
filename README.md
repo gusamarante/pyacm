@@ -61,5 +61,5 @@ contains an example application to the Brazilian DI futures curve that showcases
 > FRB of New York Staff Report No. 340, 
 > Available at SSRN: https://ssrn.com/abstract=1362586 or http://dx.doi.org/10.2139/ssrn.1362586
 
-I would like to thank Emanuel Moench for sending me his original MATLAB code in 
+I would like to thank Emanuel Moench for sharing his original MATLAB code in 
 order to perfectly replicate these results.
