@@ -45,10 +45,13 @@ date and interpolate it at fixed monthly maturities
 
 
 # Examples
-The estimates for the US are available on the [NY FED website](https://www.newyorkfed.org/research/data_indicators/term-premia-tabs#/overview).
+Updated estimates for the US are available on the [NY FED website](https://www.newyorkfed.org/research/data_indicators/term-premia-tabs#/overview). 
+The file [`example_us`](https://github.com/gusamarante/pyacm/blob/main/example_us.py) reproduces the original outputs using the same 
+dataset as the authors.
 
 The jupyter notebook [`example_br`](https://github.com/gusamarante/pyacm/blob/main/example_br.ipynb) 
-contains an example application to the Brazilian DI futures curve that showcases all the available methods.
+contains an example application to the Brazilian DI futures curve that 
+showcases all the available methods and attributes.
 
 <p align="center">
   <img src="https://raw.githubusercontent.com/gusamarante/pyacm/refs/heads/main/images/DI%20term%20premium.png" alt="DI Term Premium"/>
