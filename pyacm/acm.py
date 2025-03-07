@@ -5,6 +5,8 @@ from numpy.linalg import inv
 from sklearn.decomposition import PCA
 from statsmodels.tools.tools import add_constant
 
+from pyacm.utils import vec_quad_form, commutation_matrix
+
 
 class NominalACM:
     """
@@ -99,6 +101,7 @@ class NominalACM:
     er_hist: pandas.DataFrame
         Historical estimates of expected returns, computed in-sample.
     """
+    # TODO add new atributes
 
     def __init__(
             self,
@@ -168,7 +171,7 @@ class NominalACM:
         self.mu, self.phi, self.Sigma, self.v, self.s0 = self._estimate_var()
 
         # 2nd Step - Excess Returns
-        self.beta, self.omega, self.beta_star = self._excess_return_regression()
+        self.beta, self.omega, self.beta_star, self.sigma2 = self._excess_return_regression()
 
         # 3rd Step - Convexity-adjusted price of risk
         self.lambda0, self.lambda1, self.mu_star, self.phi_star = self._retrieve_lambda()
@@ -202,6 +205,9 @@ class NominalACM:
 
         # Expected Return
         self.er_loadings, self.er_hist = self._expected_return()
+
+        # Inference
+        self.z_lambda, self.z_beta = self._inference()
 
     def fwd_curve(self, date=None):
         """
@@ -354,6 +360,7 @@ class NominalACM:
         abc = inv(Z.T @ Z) @ (Z.T @ rx)
         E = rx - Z @ abc
         omega = np.var(E.reshape(-1, 1)) * np.eye(len(self.selected_maturities))
+        sigma2 = np.trace(E @ E.T) / (self.n * self.t_m)
 
         abc = abc.T
         beta = abc[:, -self.n_factors:]
@@ -363,7 +370,7 @@ class NominalACM:
         for i in range(len(self.selected_maturities)):
             beta_star[i, :] = np.kron(beta[i, :], beta[i, :]).T
 
-        return beta, omega, beta_star
+        return beta, omega, beta_star, sigma2
 
     def _retrieve_lambda(self):
         rx = self.rx_m[self.selected_maturities]
@@ -452,3 +459,71 @@ class NominalACM:
             columns=self.curve.columns,
         )
         return er_loadings, er_hist_d
+
+    def _inference(self):
+        # TODO I AM NOT SURE THAT THIS SECTION IS CORRECT
+
+        # Auxiliary matrices
+        Z = self.pc_factors_m.copy().T
+        Z = Z.values[:, 1:]
+        Z = np.vstack((np.ones((1, self.t_m)), Z))
+
+        Lamb = np.hstack((self.lambda0.reshape(-1, 1), self.lambda1))
+
+        rho1 = np.zeros((self.n_factors + 1, 1))
+        rho1[0, 0] = 1
+
+        A_beta = np.zeros((self.n_factors * self.beta.shape[0], self.beta.shape[0]))
+
+        for ii in range(self.beta.shape[1]):
+            A_beta[ii * self.beta.shape[0]:(ii + 1) * self.beta.shape[0], ii] = self.beta[:, ii]
+
+        BStar = np.squeeze(np.apply_along_axis(vec_quad_form, 1, self.beta))
+
+        comm_kk = commutation_matrix(shape=(self.n_factors, self.n_factors))
+        comm_kn = commutation_matrix(shape=(self.n_factors, self.beta.shape[0]))
+
+        # Assymptotic variance of the betas
+        v_beta = self.sigma2 * np.kron(np.eye(self.beta.shape[0]), inv(self.Sigma))
+
+        # Assymptotic variance of the lambdas
+        upsilon_zz = (1 / self.t_m) * Z @ Z.T
+        v1 = np.kron(inv(upsilon_zz), self.Sigma)
+        v2 = self.sigma2 * np.kron(inv(upsilon_zz), inv(self.beta.T @ self.beta))
+        v3 = self.sigma2 * np.kron(Lamb.T @ self.Sigma @ Lamb, inv(self.beta.T @ self.beta))
+
+        v4_sim = inv(self.beta.T @ self.beta) @ self.beta.T @ A_beta.T
+        v4_mid = np.kron(np.eye(self.beta.shape[0]), self.Sigma)
+        v4 = self.sigma2 * np.kron(rho1 @ rho1.T, v4_sim @ v4_mid @ v4_sim.T)
+
+        v5_sim = inv(self.beta.T @ self.beta) @ self.beta.T @ BStar
+        v5_mid = (np.eye(self.n_factors ** 2) + comm_kk) @ np.kron(self.Sigma, self.Sigma)
+        v5 = 0.25 * np.kron(rho1 @ rho1.T, v5_sim @ v5_mid @ v5_sim.T)
+
+        v6_sim = inv(self.beta.T @ self.beta) @ self.beta.T @ np.ones((self.beta.shape[0], 1))
+        v6 = 0.5 * (self.sigma2 ** 2) * np.kron(rho1 @ rho1.T, v6_sim @ v6_sim.T)
+
+        v_lambda_tau = v1 + v2 + v3 + v4 + v5 + v6
+
+        c_lambda_tau_1 = np.kron(Lamb.T, inv(self.beta.T @ self.beta) @ self.beta.T)
+        c_lambda_tau_2 = np.kron(rho1, inv(self.beta.T @ self.beta) @ self.beta.T @ A_beta.T @ np.kron(np.eye(self.beta.shape[0]), self.Sigma))
+        c_lambda_tau = - c_lambda_tau_1 @ comm_kn @ v_beta @ c_lambda_tau_2.T
+
+        v_lambda = v_lambda_tau + c_lambda_tau + c_lambda_tau.T
+
+        # extract the z-tests
+        sd_lambda = np.sqrt(np.diag(v_lambda).reshape(Lamb.shape, order='F'))
+        sd_beta = np.sqrt(np.diag(v_beta).reshape(self.beta.shape, order='F'))
+
+        # Organize in DataFrames
+        z_beta = pd.DataFrame(
+            date=self.beta / sd_beta,
+            columns=self.pc_factors_m.columns,
+            index=self.selected_maturities,
+        )
+        z_lambda = pd.DataFrame(
+            data=Lamb / sd_lambda,
+            index=self.pc_factors_m.columns,
+            columns=[f"lambda {i}" for i in range(Lamb.shape[1])],
+        )
+        return z_lambda, z_beta
