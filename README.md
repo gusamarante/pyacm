@@ -66,3 +66,7 @@ showcases all the available methods and attributes.
 
 I would like to thank Emanuel Moench for sharing his original MATLAB code in 
 order to perfectly replicate these results.
+
+# Citation
+> Gustavo Amarante (2025). pyacm: Python Implementation of the ACM Term Premium 
+> Model. Retrieved from https://github.com/gusamarante/pyacm
