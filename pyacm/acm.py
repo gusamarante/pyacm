@@ -445,7 +445,7 @@ class NominalACM:
         # Historical estimate
         exp_ret = (self.B @ (self.lambda1 @ self.pc_factors_d.T + self.lambda0.reshape(-1, 1))).values
         conv_adj = np.diag(self.B @ self.Sigma @ self.B.T) + self.omega[0, 0]
-        er_hist = (exp_ret + conv_adj[:, None]).T
+        er_hist = (exp_ret - 0.5 * conv_adj[:, None]).T
         er_hist_d = pd.DataFrame(
             data=er_hist,
             index=self.pc_factors_d.index,
