@@ -410,7 +410,7 @@ class NominalACM:
             Bpb = np.kron(B[n - 1, :], B[n - 1, :])
             s0term = 0.5 * (Bpb @ self.s0 + self.omega[0, 0])
 
-            A[n] = A[n - 1] + B[n - 1, :] @ (self.mu - lambda0) + s0term + A[0]
+            A[n] = (A[n - 1] + B[n - 1, :] @ (self.mu - lambda0) + s0term + A[0])[0]
             B[n, :] = B[n - 1, :] @ (self.phi - lambda1) + B[0, :]
 
         return A, B
