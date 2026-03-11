@@ -2,7 +2,7 @@
 
 
 # pyacm
-Implementation of ["Pricing the Term Structure with Linear Regressions" from 
+Python implementation of the ACM Term Premium model of ["Pricing the Term Structure with Linear Regressions" from 
 Adrian, Crump and Moench (2013)][paper_website].
 
 The `NominalACM` class prices the time series and cross-section of the term 
