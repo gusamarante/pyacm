@@ -26,6 +26,7 @@ setup(
         'numpy',
         'pandas',
         'scikit-learn',
+        'scipy',
         'statsmodels',
     ],
     keywords=[
