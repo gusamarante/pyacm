@@ -452,3 +452,7 @@ class NominalACM:
             columns=self.curve.columns,
         )
         return er_loadings, er_hist_d
+
+
+class RealACM:
+    pass
