@@ -9,15 +9,19 @@ The model decomposes breakeven inflation into:
     - Expected inflation (risk-neutral)
     - Inflation risk premium (IRP = TP_N - TP_R)
     - Liquidity premium (captured by the liquidity factor in the state vector)
+
+The results are very close to the authors' original results, but not match
+exactly as the sample data for the liquidity factor does not have a long enough
+history anymore
 """
 import pandas as pd
 import matplotlib.pyplot as plt
 from pyacm import RealACM
 
 
-# ===================
+# ====================
 # ===== Load Data ====
-# ===================
+# ====================
 xl = pd.ExcelFile("sample_data/real_acm_data.xlsx")
 
 nominal_curve = pd.read_excel(xl, sheet_name="nominal_yields", index_col=0, parse_dates=True)
@@ -57,14 +61,11 @@ acm = RealACM(
     selected_maturities_r=selected_maturities_r,
 )
 
-print(f"pi0 (monthly inflation constant): {acm.pi0:.6f}  ({acm.pi0 * 12 * 100:.2f}% ann.)")
-print(f"pi1 (inflation factor loadings):  {acm.pi1.round(5)}")
 
-
-# =================
+# ==================
 # ===== Charts =====
-# =================
-mat = 24  # 10-year maturity
+# ==================
+mat = 120  # 10-year maturity
 
 size = 5
 fig = plt.figure(figsize=(size * (16 / 7), size * 2))
@@ -120,10 +121,9 @@ plt.tight_layout()
 plt.show()
 
 
-# ===========================================
-# ===== Figure 7 Replication =====
-# === Treasury and TIPS Term Premia (5-10y Forward) ===
-# ===========================================
+# ===================================
+# ===== Replication of Figure 7 =====
+# ====================================
 fwd = acm.forward_rates_ts(t1=5, t2=10)
 
 # --- Plot ---

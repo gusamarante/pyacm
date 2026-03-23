@@ -119,100 +119,6 @@ This ensures the liquidity factor is non-negative, so illiquidity can only raise
 
 ---
 
-## 7. U.K. Nominal and Real Zero-Coupon Gilt Yields (Robustness Application)
-
-**Paper usage:** Section 5.5 estimates the model on U.K. data. End-of-month zero-coupon yields from 1985:01 to 2012:12 (T = 336). Nominal: n = 6, 12, 24, ..., 120 months (N = 11 maturities). Real: n = 60, 66, ..., 120 months (N_R = 8 maturities). The 1-month nominal yield serves as the short rate. No liquidity factor in the U.K. specification.
-
-**Source:** Bank of England yield curve estimates (Anderson and Sleath, 2001).
-
-**Direct download:**
-- **Landing page:** https://www.bankofengland.co.uk/statistics/yield-curves
-- Spreadsheets are downloadable directly from the landing page (nominal spot, real spot, forward rates).
-- Nominal curves available daily from 1979:01:02. Real curves from 1985:01:02.
-
-**Details:** Yields are continuously compounded and quoted on an annual basis. The Bank provides spot rates and instantaneous forward rates. Monthly intervals up to 5 years, semi-annual intervals for longer maturities.
-
-**Cross-section expansion:** The Bank publishes nominal yields up to 40 years and real yields up to ~25 years (limited by outstanding index-linked gilts). You could expand the real maturities beyond 120 months and push the nominal maturities beyond 120 months as well.
-
----
-
-## 8. U.K. Retail Price Index (RPI)
-
-**Paper usage:** The U.K. analog of CPI-U. Used as Q_t for inflation-indexed gilt payoffs.
-
-**Source:** U.K. Office for National Statistics (ONS).
-
-**Direct download:**
-- **ONS series CHAW (Jan 1987 = 100):** https://www.ons.gov.uk/economy/inflationandpriceindices/timeseries/chaw/mm23
-- **DMO (longer history, from June 1980):** https://www.dmo.gov.uk/data/ExportReport?reportCode=D4O
-- Monthly frequency.
-
----
-
-## Additional Series Used in the Analysis (Not for Core Estimation)
-
-The following series appear in the paper's empirical analysis of the inflation risk premium (Section 5.1) and other applications. They are not used in the core model estimation but are useful for replication of the full set of results.
-
-### 9. SMOVE — Swaption Implied Treasury Volatility
-
-**Paper usage:** 3-month swaption implied Treasury volatility (from Merrill Lynch). Correlated with the estimated inflation risk premium.
-
-**Source:** This is a proprietary index from BofA Merrill Lynch (now ICE BofA). Historical data is available via Bloomberg (`SMOVE Index`) or Refinitiv. FRED also carries the ICE BofA MOVE Index, which is the successor/equivalent:
-- **FRED Series:** `MOVE` — https://fred.stlouisfed.org/series/MOVE
-
-### 10. BCFF Survey — Forecaster Disagreement (DISAG)
-
-**Paper usage:** Cross-sectional standard deviation of individual inflation forecasts 4 quarters ahead from the Blue Chip Financial Forecasts survey.
-
-**Source:** Wolters Kluwer (publisher of Blue Chip Financial Forecasts). This is a proprietary subscription dataset. Individual forecasts are required to compute the cross-sectional dispersion. The Philadelphia Fed's Survey of Professional Forecasters (SPF) provides a publicly available alternative for disagreement measures:
-- **SPF:** https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/survey-of-professional-forecasters
-
-### 11. Unemployment Rate (UNEMP)
-
-**Source (FRED):**
-- **Series ID:** `UNRATE`
-- **URL:** https://fred.stlouisfed.org/series/UNRATE
-
-### 12. Consumer Confidence (CONF)
-
-**Paper usage:** Conference Board Consumer Confidence Index.
-
-**Source:** The Conference Board (proprietary). Available via Bloomberg, Refinitiv, or Haver Analytics. FRED carries the University of Michigan Consumer Sentiment Index as a public alternative:
-- **FRED Series:** `UMCSENT` — https://fred.stlouisfed.org/series/UMCSENT
-
-### 13. Core CPI Inflation (CPI)
-
-**Paper usage:** Year-over-year core CPI inflation.
-
-**Source (FRED):**
-- **Series ID (SA):** `CPILFESL` — https://fred.stlouisfed.org/series/CPILFESL
-- **Series ID (NSA):** `CPILFENS` — https://fred.stlouisfed.org/series/CPILFENS
-
-### 14. Nominal Trade-Weighted Dollar (DOLLAR)
-
-**Paper usage:** Nominal trade-weighted exchange value of the U.S. Dollar.
-
-**Source (FRED):**
-- **Series ID (Broad):** `DTWEXBGS` — https://fred.stlouisfed.org/series/DTWEXBGS
-- **Series ID (Major currencies):** `DTWEXM` (discontinued; replaced by `DTWEXBGS`)
-
-### 15. Blue Chip 5–10 Year Forward Inflation Forecast
-
-**Paper usage:** Used as a survey benchmark for long-run inflation expectations (Figure 7). Observed semi-annually.
-
-**Source:** Blue Chip Financial Forecasts (Wolters Kluwer). Proprietary. The Philadelphia Fed's SPF 10-year CPI inflation forecast is a close public alternative:
-- **SPF Long-Range Forecasts:** https://www.philadelphiafed.org/surveys-and-data/real-time-data-research/survey-of-professional-forecasters
-
-### 16. Federal Funds Rate Futures Surprises
-
-**Paper usage:** Section 5.3, measuring the surprise component of monetary policy on FOMC days.
-
-**Source:** CME federal funds futures contracts. Proprietary tick data from Bloomberg or Refinitiv. Academic datasets of fed funds surprises are available from:
-- **Ken Kuttner's website** or various replication packages
-- **Refet Gürkaynak, Brian Sack, and Eric Swanson (2005)** provide an extended dataset of monetary policy surprises
-
----
-
 ## Summary Table
 
 | # | Series | Frequency | Source | Access | Format |
@@ -223,16 +129,6 @@ The following series appear in the paper's empirical analysis of the inflation r
 | 4 | Primary dealer Treasury/TIPS volumes | Weekly | NY Fed (FR2004) | Public | CSV/Excel |
 | 5 | CPI-U (NSA) | Monthly | BLS / FRED | Public | CSV/API |
 | 6 | Composite liquidity indicator | — | Derived from #3 and #4 | — | — |
-| 7 | U.K. nominal & real gilt yields | Daily | Bank of England | Public | Excel |
-| 8 | U.K. RPI | Monthly | ONS / DMO | Public | CSV |
-| 9 | SMOVE / MOVE index | Daily | ICE BofA / FRED | Public (FRED) | CSV |
-| 10 | BCFF disagreement | Monthly | Wolters Kluwer | Proprietary | — |
-| 11 | Unemployment rate | Monthly | BLS / FRED | Public | CSV/API |
-| 12 | Consumer confidence | Monthly | Conference Board | Proprietary | — |
-| 13 | Core CPI (YoY) | Monthly | BLS / FRED | Public | CSV/API |
-| 14 | Trade-weighted USD | Daily | Federal Reserve / FRED | Public | CSV/API |
-| 15 | BCFF 5–10y inflation forecast | Semi-annual | Wolters Kluwer | Proprietary | — |
-| 16 | Fed funds futures surprises | Event | CME / academic datasets | Mixed | — |
 
 ---
 
