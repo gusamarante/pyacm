@@ -538,7 +538,7 @@ class RealACM:
     curve : pd.DataFrame
         Daily nominal zero-coupon log-yields.
 
-    tips_curve : pd.DataFrame
+    real_curve : pd.DataFrame
         Daily TIPS zero-coupon log-yields.
 
     liquidity : pd.Series
@@ -665,7 +665,7 @@ class RealACM:
     def __init__(
             self,
             nominal_curve,
-            tips_curve,
+            real_curve,
             liquidity,
             cpi,
             n_factors_n=3,
@@ -683,7 +683,7 @@ class RealACM:
             be consecutive integers starting from 1 (monthly maturities).
             Index must be a DatetimeIndex.
 
-        tips_curve : pd.DataFrame
+        real_curve : pd.DataFrame
             Annualized log-yields for real (TIPS) zero-coupon bonds. Columns
             must be consecutive integers (monthly maturities, typically 24+).
             Index must be a DatetimeIndex.
@@ -720,7 +720,7 @@ class RealACM:
         """
         self._assertions(
             nominal_curve,
-            tips_curve,
+            real_curve,
             nominal_curve_m,
             tips_curve_m,
             selected_maturities_n,
@@ -732,12 +732,12 @@ class RealACM:
         self.n_factors = n_factors_n + n_factors_r + 1  # +1 for liquidity, could add more in the future
 
         self.curve = nominal_curve
-        self.tips_curve = tips_curve
+        self.real_curve = real_curve
         self.liquidity = liquidity
         self.cpi = cpi
 
         self.n_n = nominal_curve.shape[1]
-        self.n_r = tips_curve.shape[1]
+        self.n_r = real_curve.shape[1]
         self.t_d = nominal_curve.shape[0]
 
         if selected_maturities_n is None:
@@ -746,7 +746,7 @@ class RealACM:
             self.selected_maturities_n = selected_maturities_n
 
         if selected_maturities_r is None:
-            self.selected_maturities_r = tips_curve.columns.tolist()
+            self.selected_maturities_r = real_curve.columns.tolist()
         else:
             self.selected_maturities_r = selected_maturities_r
 
@@ -757,7 +757,7 @@ class RealACM:
             self.curve_monthly = nominal_curve_m
 
         if tips_curve_m is None:
-            self.tips_curve_monthly = tips_curve.resample('ME').mean()
+            self.tips_curve_monthly = real_curve.resample('ME').mean()
         else:
             self.tips_curve_monthly = tips_curve_m
 
@@ -831,7 +831,7 @@ class RealACM:
         self.rny_n = self._compute_yields(self.A_rn_n, self.B_rn_n, self.curve.columns)
         self.tp_n = self.miy_n - self.rny_n
 
-        tips_cols = self.tips_curve.columns
+        tips_cols = self.real_curve.columns
         self.miy_r = self._compute_yields(self.A_r, self.B_r, tips_cols)
         self.rny_r = self._compute_yields(self.A_rn_r, self.B_rn_r, tips_cols)
         self.tp_r = self.miy_r - self.rny_r
@@ -886,7 +886,7 @@ class RealACM:
                 f"Forward horizon [{t1}, {t2}] years maps to months [{m1}, {m2}], "
                 f"which is outside the nominal curve range [1, {self.n_n}]."
             )
-        tips_cols = self.tips_curve.columns.tolist()
+        tips_cols = self.real_curve.columns.tolist()
         if m1 not in tips_cols or m2 not in tips_cols:
             raise ValueError(
                 f"Forward horizon [{t1}, {t2}] years maps to months [{m1}, {m2}], "
@@ -978,7 +978,7 @@ class RealACM:
 
         _fwd = NominalACM._compute_fwd_curve
         K = self.n_factors
-        tips_cols = self.tips_curve.columns
+        tips_cols = self.real_curve.columns
 
         # Liquidity factor value at this date (last factor in the state vector)
         X_liq = float(self.pc_factors_d.loc[date].iloc[-1])
@@ -1012,7 +1012,7 @@ class RealACM:
         })
 
         # --- Real forward curves ---
-        fwd_real_obs = _fwd(self.tips_curve.loc[date])
+        fwd_real_obs = _fwd(self.real_curve.loc[date])
         fwd_real_fit = _fwd(self.miy_r.loc[date])
         fwd_real_rn  = _fwd(self.rny_r.loc[date])
         fwd_liq_r    = _fwd(liq_yield_r)
@@ -1161,7 +1161,7 @@ class RealACM:
         real_pc_m = sign_r * real_pc_m
 
         # Daily real PCs: compute TIPS daily residuals then project
-        tips_d = self.tips_curve.reindex(self.curve.index, method='ffill')
+        tips_d = self.real_curve.reindex(self.curve.index, method='ffill')
         regressors_d = pd.concat([nom_pc_d, liq_d.rename('liquidity')], axis=1)
         # use monthly-fitted regression coefficients to get daily residuals
         tips_d_pred = lr.predict(regressors_d.reindex(tips_d.index).values)
@@ -1412,7 +1412,7 @@ class RealACM:
         delta0_R = self.delta0 - pi0
 
         # TIPS columns are not necessarily 1-indexed; we compute for all TIPS maturities
-        n_max = int(self.tips_curve.columns.max())
+        n_max = int(self.real_curve.columns.max())
 
         A_all = np.zeros(n_max + 1)
         B_all = np.zeros((n_max + 1, self.n_factors))
@@ -1426,7 +1426,7 @@ class RealACM:
             B_all[n, :] = bp @ phi_tilde - self.delta1
 
         # Extract only the maturities in tips_curve
-        mats = self.tips_curve.columns.values.astype(int)
+        mats = self.real_curve.columns.values.astype(int)
         A_r = A_all[mats]
         B_r = B_all[mats, :]
 

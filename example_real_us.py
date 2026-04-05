@@ -52,7 +52,7 @@ selected_maturities_r = [24, 36, 48, 60, 72, 84, 96, 108, 120]
 
 acm = RealACM(
     nominal_curve=nominal_curve,
-    tips_curve=tips_curve,
+    real_curve=tips_curve,
     liquidity=liquidity,
     cpi=cpi,
     n_factors_n=3,
