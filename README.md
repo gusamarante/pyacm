@@ -104,7 +104,7 @@ The file [`example_real_us`](https://github.com/gusamarante/pyacm/blob/main/exam
 replicates the joint Treasury-TIPS decomposition from Abrahams, Adrian, Crump 
 and Moench (2016) using US data.
 
-The file [`example_real_br`](https://github.com/gusamarante/pyacm/blob/main/example_real_br.ipynb) 
+The jupyter notebook [`example_real_br`](https://github.com/gusamarante/pyacm/blob/main/example_real_br.ipynb) 
 applies the `RealACM` model to Brazilian nominal (LTN/NTN-F) and 
 inflation-linked (NTN-B) yield curves, decomposing yields into expected real 
 rates, expected inflation, real term premia, inflation risk premia, and a 
