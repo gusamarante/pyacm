@@ -3,7 +3,6 @@ import numpy as np
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 from pyacm import RealACM
-from scipy.interpolate import CubicSpline
 
 
 # ====================
@@ -12,27 +11,12 @@ from scipy.interpolate import CubicSpline
 xl = pd.ExcelFile("sample_data/nss_zero_curves.xlsx")
 
 # --- Nominal zero-coupon yields (NSS-fitted) ---
-nominal_raw = pd.read_excel(xl, sheet_name="nominal_yields", index_col="date", parse_dates=True)
-nominal_raw.columns = nominal_raw.columns.astype(int)
+nominal_curve = pd.read_excel(xl, sheet_name="nominal_yields", index_col="date", parse_dates=True)
+nominal_curve.columns = nominal_curve.columns.astype(int)
 
 # --- Real zero-coupon yields (NSS-fitted) ---
-real_raw = pd.read_excel(xl, sheet_name="real_yields", index_col="date", parse_dates=True)
-real_raw.columns = real_raw.columns.astype(int)
-
-# Interpolate NSS curves to consecutive monthly maturities
-# Nominal: months 1–120, Real: months 24–120
-target_n = np.arange(1, 121)
-target_r = np.arange(24, 121)
-
-nominal_curve = pd.DataFrame(index=nominal_raw.index, columns=target_n, dtype=float)
-for i, row in nominal_raw.iterrows():
-    cs = CubicSpline(row.index.values, row.values, extrapolate=True)
-    nominal_curve.loc[i] = cs(target_n)
-
-real_curve = pd.DataFrame(index=real_raw.index, columns=target_r, dtype=float)
-for i, row in real_raw.iterrows():
-    cs = CubicSpline(row.index.values, row.values, extrapolate=True)
-    real_curve.loc[i] = cs(target_r)
+real_curve = pd.read_excel(xl, sheet_name="real_yields", index_col="date", parse_dates=True)
+real_curve.columns = real_curve.columns.astype(int)
 
 # --- Liquidity composite index ---
 # Indicator 1: TIPS (NTN-B) NSS fitting errors
