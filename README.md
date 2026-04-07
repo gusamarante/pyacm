@@ -3,8 +3,8 @@
 
 # pyacm
 Python implementation of the ACM Term Premium models
-- Nominal version from ["Pricing the Term Structure with Linear Regressions" from Adrian, Crump and Moench (2013)][paper_website_nominal].
-- Real version from ["Decomposing Real and Nominal Yield Curves (2015)][paper_website_real].
+- **Nominal** version from ["Pricing the Term Structure with Linear Regressions" from Adrian, Crump and Moench (2013)][paper_website_nominal].
+- **Real** version from ["Decomposing Real and Nominal Yield Curves" from Abrahams, Adrian, Crump and Moench (2015)][paper_website_real].
 
 The `NominalACM` class prices the time series and cross-section of the term 
 structure of interest rates using a three-step linear regression approach.
