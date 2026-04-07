@@ -111,7 +111,7 @@ rates, expected inflation, real term premia, inflation risk premia, and a
 liquidity premium.
 
 
-# Original Article
+# Original Articles
 > Adrian, Tobias and Crump, Richard K. and Moench, Emanuel, 
 > Pricing the Term Structure with Linear Regressions (April 11, 2013). 
 > FRB of New York Staff Report No. 340
