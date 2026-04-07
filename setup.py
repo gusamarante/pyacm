@@ -7,14 +7,14 @@ here = os.path.abspath(os.path.dirname(__file__))
 with codecs.open(os.path.join(here, "README.md"), encoding="utf-8") as fh:
     long_description = "\n" + fh.read()
 
-VERSION = '1.2'
+VERSION = '2.0'
 DESCRIPTION = 'ACM Term Premium'
 
 # Setting up
 setup(
     name="pyacm",
     version=VERSION,
-    author="Tobias Adrian, Richard K. Crump, Emanuel Moench",
+    author="Tobias Adrian, Richard K. Crump, Emanuel Moench, Micahel Abrahams",
     maintainer="Gustavo Amarante",
     maintainer_email="developer@dsgepy.com",
     description=DESCRIPTION,
@@ -26,11 +26,13 @@ setup(
         'numpy',
         'pandas',
         'scikit-learn',
+        'scipy',
         'statsmodels',
     ],
     keywords=[
         'asset pricing',
         'yield curve',
         'term premium',
+        'inflation linked',
     ],
 )
