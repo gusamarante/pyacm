@@ -110,6 +110,10 @@ inflation-linked (NTN-B) yield curves, decomposing yields into expected real
 rates, expected inflation, real term premia, inflation risk premia, and a 
 liquidity premium.
 
+<p align="center">
+  <img src="https://github.com/gusamarante/pyacm/blob/a42e482214040829cc900f83e3a1d43fecc61694/images/RealACM.png" alt="Real ACM Decomposition"/>
+</p>
+
 
 # Original Articles
 > Adrian, Tobias and Crump, Richard K. and Moench, Emanuel, 
