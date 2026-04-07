@@ -1,5 +1,14 @@
 [paper_website]: https://www.newyorkfed.org/medialibrary/media/research/staff_reports/sr340.pdf
 
+# To Do before mergeing
+- Build jupyter notebook with the example for brazil
+- Erase files from the repository.
+- Rewrite the README
+- Check documentation
+- Update version
+- Publish
+- Write linked in posto
+- Write whatsapp post
 
 # pyacm
 Python implementation of the ACM Term Premium model from ["Pricing the Term Structure with Linear Regressions" from 
