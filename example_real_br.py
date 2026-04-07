@@ -142,3 +142,28 @@ ax2.tick_params(rotation=90, axis="x")
 ax2.legend(fontsize=9)
 plt.tight_layout()
 plt.show()
+
+# --- Chart 3: Observed Inflation (YoY) vs Expected Inflation (2Y) ---
+mat3 = 24
+mat3_label = f"{mat3 // 12}Y"
+expected_inflation_2y = acm.rny_n[mat3] - acm.rny_r[mat3]
+inflation_rp_2y = acm.irp[mat3]
+observed_inflation = cpi.pct_change(12).dropna()  # YoY % change
+
+common_start = max(observed_inflation.index.min(), expected_inflation_2y.index.min())
+common_end = min(observed_inflation.index.max(), expected_inflation_2y.index.max())
+
+fig3, ax3 = plt.subplots(figsize=(12, 6))
+ax3.plot(observed_inflation.loc[common_start:common_end], lw=1.5, label="Observed Inflation (IPCA YoY)")
+ax3.plot(expected_inflation_2y.loc[common_start:common_end], lw=1.5, label=f"Expected Inflation ({mat3_label})")
+ax3.plot(inflation_rp_2y.loc[common_start:common_end], lw=1.5, label=f"Inflation Risk Premium ({mat3_label})")
+ax3.set_title(f"Observed Inflation vs {mat3_label} Expected Inflation & Inflation Risk Premium")
+ax3.set_ylabel("Annualized Rate")
+ax3.xaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax3.yaxis.grid(color="grey", linestyle="-", linewidth=0.5, alpha=0.5)
+ax3.xaxis.set_major_locator(mdates.YearLocator())
+ax3.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+ax3.tick_params(rotation=90, axis="x")
+ax3.legend(fontsize=9)
+plt.tight_layout()
+plt.show()
